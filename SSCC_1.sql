@@ -1,4 +1,6 @@
 ls
+#### comment if works
+####
 
 pwd
 
@@ -11,9 +13,13 @@ SELECT CURRENT_DATE;
 
 SELECT CURRENT_DATABASE();
 
+show databases;
+
 CREATE DATABASE demo_data_loading;
 
-USE DATABASE demo_date_loading;
+USE DATABASE DEMO_DATA_LOADING;
+
+SHOW TABLES;
 
 CREATE table customer(
     name STRING,
@@ -25,7 +31,7 @@ CREATE table customer(
     country STRING
 );
 
-
+DESCRIBE CUSTOMER;
 
 SELECT * FROM customer;
 -- pass comment;
