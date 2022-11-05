@@ -1,20 +1,7 @@
-ls
-# comment if works
-####
-'''
-pwd
-'''
-snowsql -a ysb81193 -u cortomaltese
--- enter password at prompt
+-- Below -- Exercises for Chapter 4 'DATA MOVEMENT'
 
-SELECT CURRENT_TIMESTAMP;
 
-SELECT CURRENT_DATE;
-
-SELECT CURRENT_DATABASE();
-
-show databases;
-
+-- Exercise 4.1
 CREATE DATABASE demo_data_loading;
 
 USE DATABASE DEMO_DATA_LOADING;
