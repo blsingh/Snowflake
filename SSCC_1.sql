@@ -1,9 +1,9 @@
 ls
-#### comment if works
+# comment if works
 ####
-
+'''
 pwd
-
+'''
 snowsql -a ysb81193 -u cortomaltese
 -- enter password at prompt
 
