@@ -76,3 +76,35 @@ COPY INTO customer FROM @%customer FILE_FORMAT=(TYPE = 'CSV' FIELD_DELIMITER = '
 SELECT * FROM customer;
 
 remove @%customer;
+
+-- USER_STAGE @~;
+
+
+CREATE DATABSE IF NOT EXIST demo_data_loading;
+
+USE DATABASE demo_data_loading;
+CREATE table vehicle(
+Make STRING,
+Model STRING,
+Year STRING,
+Category STRING
+);
+
+PUT 'file:///mnt/c/users/blsin/prompt_Git_Snowflake saves/customers.csv' @~;
+
+LIST @~;
+
+CREATE OR REPLACE FILE FORMAT CSV_No_Header_Blank_Lines
+	type = 'CSV'
+	field_delimiter = ','
+	fielf_optionally_enclosed_by = '"'
+	skip_header = 0
+	skip_blank_lines = true;
+	
+	COPY INTO vehicle
+	FROM @~/vehicles.csv.gz
+	file_format = CSV_No_Header_Blank_Lines;
+	
+	SELECT * FROM vehicle;
+	
+	REMOVE @~/vehicles.csv.gz;
