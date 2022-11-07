@@ -101,10 +101,10 @@ CREATE OR REPLACE FILE FORMAT CSV_No_Header_Blank_Lines
 	skip_header = 0
 	skip_blank_lines = true;
 	
-	COPY INTO vehicle
-	FROM @~/vehicles.csv.gz
-	file_format = CSV_No_Header_Blank_Lines;
+COPY INTO vehicle
+FROM @~/vehicles.csv.gz
+file_format = CSV_No_Header_Blank_Lines;
 	
-	SELECT * FROM vehicle;
+SELECT * FROM vehicle;
 	
-	REMOVE @~/vehicles.csv.gz;
+REMOVE @~/vehicles.csv.gz;
