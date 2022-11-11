@@ -75,6 +75,9 @@ LIST @%customer;
 USE WAREHOUSE MY_WH;
 
 COPY INTO customer FROM @%customer FILE_FORMAT=(TYPE = 'CSV' FIELD_DELIMITER = '|' SKIP_HEADER = 1 COMPRESSION = 'GZIP');
+-- COPY INTO <target tbl nm>
+-- FROM @%TABLE_NAME 
+-- file_format
 
 SELECT * FROM customer;
 
@@ -182,9 +185,9 @@ CREATE OR REPLACE STAGE prospect_stage url='s3://snowpro-core-study-guide/datalo
 -- | Stage area PROSPECTS_STAGE successfully created. |
 --►►►►---------------------------------------------------------------
 /*-- -- SKIPPED -- SKIPPED -- SKIPPED -- SKIPPED ## if this code is run we create external stages(i.e. pointers that do not take up snfk resourses.)
-CREATE OR REPLACE STAGE prospect_stage2 URL = 'S3://snowflake-external-stg-tr0' CREDENTIALS = (AWS_KEY_ID = 'AKIAV3D4FMPVWDTL3VD2' AWS_SECRET_KEY = 'ltccI/KUEZ9EmavUB9AwPRDTAEDxQaUIRRBs5qaQ');
+CREATE OR REPLACE STAGE prospect_stage2 URL = 'S3://snowflake-external-stg-tr0' CREDENTIALS = (AWS_KEY_ID = '*******************' AWS_SECRET_KEY = '*********************************');
 
-CREATE OR REPLACE STAGE prospect_stage1 URL='S3://snowflake-external-stg-tr0' file_format = (type = 'CSV' field_delimiter = ','   field_optionally_enclosed_by = '"' skip_header = 0) CREDENTIALS = (AWS_KEY_ID = 'AKIAV3D4FMPVWDTL3VD2' AWS_SECRET_KEY = 'ltccI/KUEZ9EmavUB9AwPRDTAEDxQaUIRRBs5qaQ');
+CREATE OR REPLACE STAGE prospect_stage1 URL='S3://snowflake-external-stg-tr0' file_format = (type = 'CSV' field_delimiter = ','   field_optionally_enclosed_by = '"' skip_header = 0) CREDENTIALS = (AWS_KEY_ID = '*******************' AWS_SECRET_KEY = '*********************************');
 
 		trouble shoot
 
@@ -196,7 +199,7 @@ CREATE OR REPLACE STAGE prospect_stage1 URL='S3://snowflake-external-stg-tr0' fi
 	-- Missing required property 'STORAGE_AWS_ROLE_ARN' on storage integration with storage provider S3.
 
 
-	CREATE OR REPLACE STAGE prospect_stage URL = 's3://snowflake-external-stage-tr0' storage_integration = link CREDENTIALS = (AWS_KEY_ID = 'AKIAV3D4FMPVWDTL3VD2' AWS_SECRET_KEY = 'ltccI/KUEZ9EmavUB9AwPRDTAEDxQaUIRRBs5qaQ') file_format = (type = 'CSV' field_delimiter = ',' field_optionally_enclosed_by = '"' skip_header = 0);
+	CREATE OR REPLACE STAGE prospect_stage URL = 's3://snowflake-external-stage-tr0' storage_integration = link CREDENTIALS = (AWS_KEY_ID = '*******************' AWS_SECRET_KEY = '*********************************') file_format = (type = 'CSV' field_delimiter = ',' field_optionally_enclosed_by = '"' skip_header = 0);
 	-- ►► in this one like added storage_integration,
 	-- ▲ the n-1 command missing AWS IAM
 */
