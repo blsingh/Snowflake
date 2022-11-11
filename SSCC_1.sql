@@ -1,7 +1,6 @@
 
-// Type of the SQL for each exercise
-// 1) Execute Priori with e.g.
-// 2) Ex Post state of data
+
+ALTER WAREHOUSE IF EXISTS MY_WH RESUME IF SUSPENDED;
 
 -- Below -- Exercises for Chapter 4 'DATA MOVEMENT'
 
@@ -42,8 +41,12 @@
 
 -- SSCC EX(ch4)
 
--- Ad HOC use @% (table_stage) STORAGE to load on premise data.
+--------------------------------------------------
+-- Loading On-premises Data via the Table Stage
+-- list @%<TABLE_NAME>
+--------------------------------------------------
 CREATE OR REPLACE DATABASE demo_data_loading;
+
 
 USE DATABASE DEMO_DATA_LOADING;
 
@@ -58,29 +61,33 @@ region STRING,
 country STRING
 );
 
-// e.g. Priori
 SHOW TABLES;
-
-DESCRIBE TABLE CUSTOMER;
 
 LIST @%customer;
 -- #TABLE STAGE 
--- Every table in Snowflake is automatically assigned a table stage. The table stage exists for the lifetime of a table and is dropped when the table is dropped. A table stage is a suitable option if you are aiming to load data into a single table. Files loaded into a table stage can only be loaded into the table associated with that stage. Multiple users can access a table stage, but a table stage can load data into only one table. 
+-- Every table in Snowflake is automatically assigned a table stage. The table stage exists for the lifetime of a table and is dropped when the table is dropped. A table stage is a suitable option if you are aiming to load data into a single table. Files loaded into a table stage can only be loaded into the table associated with that stage. Multiple users can access a table stage, but a table stage can load data into only one table.
 
 PUT 'file:///mnt/c/users/blsin/prompt_Git_Snowflake saves/customers.csv' @%customer;
-// Priori table_stage storage using
+-- #PUT command: upload local files
+
 LIST @%customer;
 
+USE WAREHOUSE MY_WH;
+
 COPY INTO customer FROM @%customer FILE_FORMAT=(TYPE = 'CSV' FIELD_DELIMITER = '|' SKIP_HEADER = 1 COMPRESSION = 'GZIP');
-// ExPost state
+
 SELECT * FROM customer;
 
 remove @%customer;
 
--- USER_STAGE @~;
+--------------------------------------------------------------
+-- Loading On-premises Data via the User Stage
+-- LIST @~;
+-- @~/<TABLE_NAME>
+--------------------------------------------------------------
 
 
-CREATE DATABSE IF NOT EXIST demo_data_loading;
+CREATE DATABASE IF NOT EXISTS demo_data_loading;
 
 USE DATABASE demo_data_loading;
 CREATE table vehicle(
@@ -90,14 +97,16 @@ Year STRING,
 Category STRING
 );
 
-PUT 'file:///mnt/c/users/blsin/prompt_Git_Snowflake saves/customers.csv' @~;
+PUT 'file:///mnt/c/users/blsin/prompt_Git_Snowflake saves/vehicles.csv' @~;
 
 LIST @~;
+-- USER STAGE @~
+-- User stages are unique to a user, which means users cannot access each other's stages. However, user stages can be used to load multiple tables if required, unlike a table stage, which is tied to a table.
 
 CREATE OR REPLACE FILE FORMAT CSV_No_Header_Blank_Lines
 	type = 'CSV'
 	field_delimiter = ','
-	fielf_optionally_enclosed_by = '"'
+	field_optionally_enclosed_by = '"'
 	skip_header = 0
 	skip_blank_lines = true;
 	
@@ -106,5 +115,187 @@ FROM @~/vehicles.csv.gz
 file_format = CSV_No_Header_Blank_Lines;
 	
 SELECT * FROM vehicle;
-	
+
 REMOVE @~/vehicles.csv.gz;
+
+---------------------------------------
+-- Loading On-premises Data via the Named Internal Stage
+
+-- @<stage_ame>/<tbl_name>
+---------------------------------------
+
+CREATE DATABASE IF NOT EXISTS demo_data_loading;
+
+USE DATABASE demo_data_loading;
+
+CREATE TABLE Locations(
+	latitude NUMBER,
+	longitude NUMBER,
+	place STRING,
+	CountryCode STRING,
+	TimeZone STRING
+);
+
+CREATE OR REPLACE FILE FORMAT TSV_No_Headers
+	type = 'CSV'
+	field_delimiter = '\t'
+	skip_header = 0;
+
+CREATE OR REPLACE STAGE ETL_Stage
+	file_format = TSV_No_Headers;
+
+SHOW STAGES;
+
+PUT 'file:///mnt/c/users/blsin/prompt_Git_Snowflake saves/locations.csv' @ETL_Stage;
+
+LIST @ETL_Stage;
+
+COPY INTO locations
+FROM @ETL_Stage/locations;
+
+SELECT * FROM Locations LIMIT 10;
+
+REMOVE @ETL_Stage;
+
+---------------------------------------
+-- Loading Cloud Data via a named External Stage
+
+-- "pointing to the "S3" location (URL) containing the upload file"
+---------------------------------------
+
+USE DATABASE demo_data_loading;
+CREATE OR REPLACE TABLE prospects(
+	first_name STRING,
+	last_name STRING,
+	email STRING,
+	phone STRING,
+	acquired_date_time DATE,
+	city STRING,
+	ssn STRING,
+	job STRING
+);
+
+
+CREATE OR REPLACE STAGE prospect_stage url='s3://snowpro-core-study-guide/dataloading/prospects/' file_format = (type = 'CSV' field_delimiter = ','   field_optionally_enclosed_by = '"' skip_header = 0); 
+
+
+-- | Stage area PROSPECTS_STAGE successfully created. |
+--►►►►---------------------------------------------------------------
+/*-- -- SKIPPED -- SKIPPED -- SKIPPED -- SKIPPED ## if this code is run we create external stages(i.e. pointers that do not take up snfk resourses.)
+CREATE OR REPLACE STAGE prospect_stage2 URL = 'S3://snowflake-external-stg-tr0' CREDENTIALS = (AWS_KEY_ID = 'AKIAV3D4FMPVWDTL3VD2' AWS_SECRET_KEY = 'ltccI/KUEZ9EmavUB9AwPRDTAEDxQaUIRRBs5qaQ');
+
+CREATE OR REPLACE STAGE prospect_stage1 URL='S3://snowflake-external-stg-tr0' file_format = (type = 'CSV' field_delimiter = ','   field_optionally_enclosed_by = '"' skip_header = 0) CREDENTIALS = (AWS_KEY_ID = 'AKIAV3D4FMPVWDTL3VD2' AWS_SECRET_KEY = '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');
+
+		trouble shoot
+
+	CREATE STORAGE INTEGRATION link
+		type = external_stage
+		storage_provider = 'S3'
+		enabled = TRUE
+		storage_allowed_locations = ('s3://snowflake-external-stg-tr0/');
+	-- Missing required property 'STORAGE_AWS_ROLE_ARN' on storage integration with storage provider S3.
+
+
+	CREATE OR REPLACE STAGE prospect_stage URL = 's3://snowflake-external-stage-tr0' storage_integration = link CREDENTIALS = (AWS_KEY_ID = 'AKIAV3D4FMPVWDTL3VD2' AWS_SECRET_KEY = 'ltccI/KUEZ9EmavUB9AwPRDTAEDxQaUIRRBs5qaQ') file_format = (type = 'CSV' field_delimiter = ',' field_optionally_enclosed_by = '"' skip_header = 0);
+	-- ►► in this one like added storage_integration,
+	-- ▲ the n-1 command missing AWS IAM
+*/
+
+
+
+COPY INTO prospects FROM @prospect_stage;
+
+SELECT * FROM prospects LIMIT 10;
+
+--------------------------------------------------------------------------------
+-- Basic Data Transformation While Ingesting
+
+-- COPY command supports (transformations):: chg column ordinality, casting data types
+--------------------------------------------------------------------------------
+
+USE DATABASE demo_data_loading;
+
+CREATE TABLE prospects_simple (
+	first_name STRING,
+	last_name STRING,
+	email STRING,
+	phone STRING,
+	acquired_date_time DATE,
+	job STRING
+);
+
+COPY INTO prospects_simple
+FROM (
+	SELECT $1, $2, $3, $4, SUBSTR($5,1,10), $8
+	FROM
+	@prospect_stage
+);
+
+SELECT * FROM PROSPECTs_SIMPLE LIMIT 3;
+SELECT * FROM PROSPECTS LIMIT 3;
+
+
+
+-------------------------------------------------
+-- CREATE AN External TABLE on Cloud Storage
+-------------------------------------------------
+
+CREATE DATABASE IF NOT EXISTS demo_data_loading;
+
+CREATE OR REPLACE STAGE customer_stage url = 's3://snowpro-core-study-guide/dataloading/external/';
+
+CREATE OR REPLACE EXTERNAL TABLE customer_external
+	WITH location = @customer_stage
+		file_format = (type = CSV field_delimiter = '|' skip_header =1);
+
+
+
+SELECT  * FROM customer_external;
+
+SELECT $1:c1 AS Name, $1:c2 as SSN, $1:c3 AS emailAddress, 
+$1:c4 AS Address, $1:c5 as Zip,$1:c6 AS Location, $1:c7 as Country
+FROM customer_external;
+
+
+CREATE OR REPLACE EXTERNAL TABLE customer_external (
+	Name STRING as (value:c1::STRING),
+	Phone STRING as (value:c2::STRING),
+	Email STRING as (value:c3::STRING),
+	Address STRING as (value:c4::STRING),
+	PostalCode STRING as (value:c5::STRING),
+	City STRING as (VALUE:C6::STRING),
+	Country STRING as (value:c7::STRING))
+WITH location = @prospect_stage1/prospects.csv
+	file_format = (type = CSV field_delimiter = '|' skip_header = 1);
+
+SELECT * FROM customer_external LIMIT 10;
+
+SELECT $2,$3,$4,$5,$6,$7,$8 FROM customer_external LIMIT 10;
+
+---------------------------
+--Loading JSON Data via an Eternal Stage
+---------------------------
+
+USE DATABASE demo_data_loading;
+
+CREATE OR REPLACE TABLE employees_temp (
+	rj VARIANT
+);
+
+CREATE OR REPLACE STAGE flights_json_stage
+ url = 's3://snowpro-core-study-guide/dataloading/json'
+ file_format = (type = json);
+
+
+COPY INTO employees_temp
+FROM @flights_json_stage;
+
+SELECT rj FROM employees_temp;
+
+---- ------ END ---- -------
+
+
+
+ 
+
+
